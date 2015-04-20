@@ -3,40 +3,77 @@
 extern crate toml;
 extern crate iron;
 extern crate router;
+extern crate core;
 
+//use iron::Iron;
 use iron::prelude::*;
 use iron::headers::*;
 use iron::{status, headers};
 
+use core::str::Str;
+
 use router::{Router};
 
+struct SbWikiServer {
+    listenaddr: String,
+    wikipath: String,
+    wikifrontpage: String,
+}
 
-fn main() {
-    let mut router = Router::new();
+impl SbWikiServer {
+    //TODO: pass config object instead of bunch of argument
+    pub fn new(listenaddr: String, wikipath: String,
+           wikifrontpage: String) -> SbWikiServer {
+        SbWikiServer {
+            listenaddr: listenaddr,
+            wikipath: wikipath,
+            wikifrontpage: wikifrontpage,
+        }
+    }
 
-    //TODO: fetch it from toml config.
-    router.get("/wiki", wikiredirect);
-    router.get("/wiki/*", wikihandler);
+    pub fn open(&self, isTLS: bool) {
+        let mut wikidocument = self.wikipath.clone();
+        wikidocument.push_str("/*");
+
+        let mut router = Router::new();
+        //TODO: fetch it from toml config.
+        
+        router.get(self.wikipath.as_slice(),
+                   |req: &mut Request| self.wikiredirect(req));
+        
+        router.get(wikidocument.as_slice(),
+                   |req: &mut Request| self.wikihandler(req));
     
-    router.get("/", roothandler);
-    router.get("/:query", roothandler);
+        router.get("/",
+                   |req: &mut Request| self.roothandler(req));
+        router.get("/:query",
+                        |req: &mut Request| self.roothandler(req));
+        
+        //let mut iron = Iron::new(router);
+        //iron.http(self.listenaddr).unwrap();
 
-    Iron::new(router).http("localhost:3000").unwrap();
+        //self.iron = iron;
 
-    fn roothandler(req: &mut Request) -> IronResult<Response> {
+        Iron::new(router).http(
+            self.listenaddr.clone().as_slice().as_slice()).unwrap();
+    }
+    
+    fn roothandler(&self, req: &mut Request)
+                   -> IronResult<Response> {
         let ref query = req.extensions.get::<Router>()
             .unwrap().find("query").unwrap_or("/");
 
         Ok(Response::with((status::Ok, *query)))
     }
-
-    fn wikiredirect(req: &mut Request) -> IronResult<Response> {
+    
+    fn wikiredirect(&self, req: &mut Request)
+                    -> IronResult<Response> {
         let mut url = req.url.path.clone();
         let mut header = Headers::new();
         let mut newpath = String::new();
 
         //TODO: customizable root page.
-        url.push(String::from_str("FrontPage"));
+        url.push(self.wikifrontpage);
 
         for i in url.iter() {
             newpath.push_str("/");
@@ -52,7 +89,8 @@ fn main() {
         Ok(resp)
     }
 
-    fn wikihandler(req: &mut Request) -> IronResult<Response> {
+    fn wikihandler(&self, req: &mut Request)
+                   -> IronResult<Response> {
         let ref requrl = req.url.clone();
         let mut urlpath = requrl.path.clone();
         
@@ -62,4 +100,13 @@ fn main() {
 
         Ok(Response::with((status::Ok, "Watch console.")))
     }
+}
+
+fn main() {
+    let sbwiki: SbWikiServer = SbWikiServer::new(
+        String::from_str("localhost:3000"),
+        String::from_str("/wiki"),
+        String::from_str("FrontPage"));
+
+    sbwiki.open(false);
 }
