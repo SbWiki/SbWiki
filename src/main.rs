@@ -10,11 +10,11 @@ use iron::prelude::*;
 use iron::headers::*;
 use iron::{status, headers};
 
-use core::str::Str;
+//use core::str::Str;
 
 use router::{Router};
 
-struct SbWikiServer {
+struct SbWikiServer<'sbwikisrv> {
     listenaddr: String,
     wikipath: String,
     wikifrontpage: String,
@@ -31,31 +31,34 @@ impl SbWikiServer {
         }
     }
 
-    pub fn open(&self, isTLS: bool) {
+    pub fn open(&'sbwikisrv self, isTLS: bool) {
         let mut wikidocument = self.wikipath.clone();
         wikidocument.push_str("/*");
 
         let mut router = Router::new();
         //TODO: fetch it from toml config.
         
-        router.get(self.wikipath.as_slice(),
-                   |req: &mut Request| self.wikiredirect(req));
+        router.get(self.wikipath.as_str(), 
+                   |req: &mut Request| -> IronResult<Response>
+                   {self.wikiredirect(req)});
         
-        router.get(wikidocument.as_slice(),
-                   |req: &mut Request| self.wikihandler(req));
+        router.get(wikidocument.as_str(),
+                   |req: &mut Request| -> IronResult<Response>
+                   {self.wikihandler(req)});
     
         router.get("/",
-                   |req: &mut Request| self.roothandler(req));
+                   |req: &mut Request| -> IronResult<Response>
+                   {self.roothandler(req)});/*
         router.get("/:query",
-                        |req: &mut Request| self.roothandler(req));
-        
+                        |req: &mut Request| &self.roothandler(req));
+        */
         //let mut iron = Iron::new(router);
         //iron.http(self.listenaddr).unwrap();
 
         //self.iron = iron;
 
         Iron::new(router).http(
-            self.listenaddr.clone().as_slice().as_slice()).unwrap();
+            self.listenaddr.clone().as_str()).unwrap();
     }
     
     fn roothandler(&self, req: &mut Request)
