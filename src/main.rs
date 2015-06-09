@@ -31,7 +31,7 @@ impl SbWikiServer {
         }
     }
 
-    pub fn open(&'sbwikisrv self, isTLS: bool) {
+    pub fn open(&self, isTLS: bool) {
         let mut wikidocument = self.wikipath.clone();
         wikidocument.push_str("/*");
 
