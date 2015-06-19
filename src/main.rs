@@ -23,8 +23,11 @@ struct SbWikiServer {
 
 impl SbWikiServer {
     //TODO: pass config object instead of bunch of argument
-    pub fn new(listenaddr: String, wikipath: String,
-               wikifrontpage: String) -> SbWikiServer {
+    pub fn new(cfgfile: &'static str) -> SbWikiServer {
+        let listenaddr    = String::from_str("localhost:31337");
+        let wikipath      = String::from_str("/wiki");
+        let wikifrontpage = String::from_str("FrontPage");
+        
         SbWikiServer {
             listenaddr: listenaddr,
             wikipath: wikipath,
@@ -61,11 +64,6 @@ impl SbWikiServer {
                    move |req: &mut Request| -> IronResult<Response>
                    {cloned.roothandler(req)});
         
-        //let mut iron = Iron::new(router);
-        //iron.http(self.listenaddr).unwrap();
-
-        //self.iron = iron;
-
         Iron::new(router).http(
             listenaddr.as_str()).unwrap();
     }
@@ -115,10 +113,8 @@ impl SbWikiServer {
 }
 
 fn main() {
-    let sbwiki: SbWikiServer = SbWikiServer::new(
-        String::from_str("localhost:31337"),
-        String::from_str("/wiki"),
-        String::from_str("FrontPage"));
+    //TODO: make it can fetch config file name from command line argument.
+    let sbwiki: SbWikiServer = SbWikiServer::new("config.toml");
 
     sbwiki.open(false);
 }
