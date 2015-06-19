@@ -5,6 +5,9 @@ extern crate toml;
 extern crate iron;
 extern crate router;
 
+use std::fs::File;
+use std::io::Read;
+
 //use iron::Iron;
 use iron::prelude::*;
 use iron::headers::*;
@@ -27,6 +30,18 @@ impl SbWikiServer {
         let listenaddr    = String::from_str("localhost:31337");
         let wikipath      = String::from_str("/wiki");
         let wikifrontpage = String::from_str("FrontPage");
+
+        //loading toml configure file
+        let mut fd = File::open(cfgfile).unwrap();
+        let mut buf: Vec<u8> = Vec::new();
+        fd.read_to_end(&mut buf);
+        let data = String::from_utf8(buf).unwrap();
+        let mut parser = toml::Parser::new(data.as_str());
+
+        match parser.parse() {
+            Some(value) => println!("Value from config file! : {:?}", value),
+            None => println!("No data!"),
+        } // temporal routine of parsing config file
         
         SbWikiServer {
             listenaddr: listenaddr,
@@ -105,7 +120,7 @@ impl SbWikiServer {
         let mut urlpath = requrl.path.clone();
         
         for i in urlpath.iter() {
-            println!("{}\n", i);
+            println!("{}", i);
         }
 
         Ok(Response::with((status::Ok, "Watch console.")))

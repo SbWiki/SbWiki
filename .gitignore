@@ -5,6 +5,9 @@
 *.rlib
 *.dll
 
+#configure file
+config.toml
+
 # Executables
 *.exe
 
