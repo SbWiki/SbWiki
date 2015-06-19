@@ -116,7 +116,7 @@ impl SbWikiServer {
 
 fn main() {
     let sbwiki: SbWikiServer = SbWikiServer::new(
-        String::from_str("localhost:3000"),
+        String::from_str("localhost:31337"),
         String::from_str("/wiki"),
         String::from_str("FrontPage"));
 
