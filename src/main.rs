@@ -17,6 +17,12 @@ use iron::{status, headers};
 
 use router::{Router};
 
+use liquidwrapper::LiquidTemplate;
+use templatewrapper::TemplateWrapper;
+
+mod templatewrapper;
+mod liquidwrapper;
+
 #[derive(Clone)]
 struct SbWikiServer {
     listenaddr: String,
@@ -132,4 +138,6 @@ fn main() {
     let sbwiki: SbWikiServer = SbWikiServer::new("config.toml");
 
     sbwiki.open(false);
+
+    let template: LiquidTemplate = LiquidTemplate::new();
 }
