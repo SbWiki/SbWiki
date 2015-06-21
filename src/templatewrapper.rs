@@ -1,5 +1,5 @@
 pub trait TemplateWrapper {
-    fn new() -> Self;
+    fn new(template_file: String) -> Self;
 }
 
 

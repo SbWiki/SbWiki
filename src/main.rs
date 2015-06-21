@@ -1,12 +1,15 @@
 #![feature(collections)]
 #![feature(convert)]
+#![feature(core)]
 
 extern crate toml;
 extern crate iron;
 extern crate router;
+extern crate core;
 
 use std::fs::File;
 use std::io::Read;
+use core::convert::From as ConvertFrom;
 
 //use iron::Iron;
 use iron::prelude::*;
@@ -33,9 +36,9 @@ struct SbWikiServer {
 impl SbWikiServer {
     //TODO: pass config object instead of bunch of argument
     pub fn new(cfgfile: &'static str) -> SbWikiServer {
-        let listenaddr    = String::from_str("localhost:31337");
-        let wikipath      = String::from_str("/wiki");
-        let wikifrontpage = String::from_str("FrontPage");
+        let listenaddr    = String::from("localhost:31337");
+        let wikipath      = String::from("/wiki");
+        let wikifrontpage = String::from("FrontPage");
 
         //loading toml configure file
         let mut fd = File::open(cfgfile).unwrap();
@@ -139,5 +142,5 @@ fn main() {
 
     sbwiki.open(false);
 
-    let template: LiquidTemplate = LiquidTemplate::new();
+    let template: LiquidTemplate = LiquidTemplate::new(String::from("hello.liquid"));
 }
