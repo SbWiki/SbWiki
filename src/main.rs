@@ -41,11 +41,9 @@ impl SbWikiServer {
         let wikifrontpage = String::from("FrontPage");
 
         //loading toml configure file
-        let mut fd = File::open(cfgfile).unwrap();
-        let mut buf: Vec<u8> = Vec::new();
-        fd.read_to_end(&mut buf);
-        let data = String::from_utf8(buf).unwrap();
-        let mut parser = toml::Parser::new(data.as_str());
+        let mut confs = String::new();
+        File::open(cfgfile).unwrap().read_to_string(&mut confs);
+        let mut parser = toml::Parser::new(confs.as_str());
 
         match parser.parse() {
             Some(value) => println!("Value from config file! : {:?}", value),
