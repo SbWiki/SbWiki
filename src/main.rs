@@ -36,7 +36,7 @@ struct SbWikiServer {
 impl SbWikiServer {
     //TODO: pass config object instead of bunch of argument
     pub fn new(cfgfile: &'static str) -> SbWikiServer {
-        let listenaddr    = String::from("localhost:31337");
+        let mut listenaddr    = String::new();
         let wikipath      = String::from("/wiki");
         let wikifrontpage = String::from("FrontPage");
 
@@ -44,12 +44,21 @@ impl SbWikiServer {
         let mut confs = String::new();
         File::open(cfgfile).unwrap().read_to_string(&mut confs);
         let mut parser = toml::Parser::new(confs.as_str());
-
-        match parser.parse() {
-            Some(value) => println!("Value from config file! : {:?}", value),
-            None => println!("No data!"),
-        } // temporal routine of parsing config file
         
+        //add portnum to address
+        let root = parser.parse().unwrap();
+        
+        let port = root["server"].lookup("port").unwrap();
+        let host = root["server"].lookup("host").unwrap();
+
+        let portstr = format!("{}:{}",
+                              host.as_str().unwrap(),
+                              port.as_integer().unwrap());
+
+        listenaddr.push_str(portstr.as_str());
+        
+        println!("{}", listenaddr);
+
         SbWikiServer {
             listenaddr: listenaddr,
             wikipath: wikipath,
