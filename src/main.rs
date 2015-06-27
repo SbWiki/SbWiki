@@ -6,6 +6,7 @@ extern crate toml;
 extern crate iron;
 extern crate router;
 extern crate core;
+extern crate liquid;
 
 use std::fs::File;
 use std::io::Read;
@@ -19,6 +20,10 @@ use iron::{status, headers};
 //use core::str::Str;
 
 use router::{Router};
+
+use liquid::Context;
+use liquid::Renderable;
+use liquid::Value;
 
 use liquidwrapper::LiquidTemplate;
 use templatewrapper::TemplateWrapper;
@@ -144,10 +149,16 @@ impl SbWikiServer {
 }
 
 fn main() {
+
+    //liquid template test
+    let template: LiquidTemplate = LiquidTemplate::new(String::from("hello.liquid"));
+    let mut con = Context::new();
+    con.set_val("message", Value::Str(String::from("This is Message")));
+    println!("Now liquid!");
+    println!("{}", template.render(&mut con).unwrap());
+
     //TODO: make it can fetch config file name from command line argument.
     let sbwiki: SbWikiServer = SbWikiServer::new("config.toml");
 
     sbwiki.open(false);
-
-    let template: LiquidTemplate = LiquidTemplate::new(String::from("hello.liquid"));
 }
