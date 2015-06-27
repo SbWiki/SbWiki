@@ -1,3 +1,5 @@
+extern crate liquid;
+
 use std::fs::File;
 use std::io::Read;
 
@@ -18,3 +20,13 @@ impl TemplateWrapper for LiquidTemplate {
         }
     }
 }
+
+impl liquid::Renderable for LiquidTemplate {
+    fn render(&self, context: &mut liquid::Context) -> Option<String> {
+        let mut options : liquid::LiquidOptions = Default::default();
+        let parsed = liquid::parse(&self.template, &mut options).unwrap();
+        parsed.render(context)
+    }
+}
+
+
