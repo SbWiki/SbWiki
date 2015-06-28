@@ -10,6 +10,7 @@ extern crate liquid;
 
 use std::fs::File;
 use std::io::Read;
+use std::collections::HashMap;
 use core::convert::From as ConvertFrom;
 
 //use iron::Iron;
@@ -151,11 +152,20 @@ impl SbWikiServer {
 fn main() {
 
     //liquid template test
+    /*
     let template: LiquidTemplate = LiquidTemplate::new(String::from("hello.liquid"));
     let mut con = Context::new();
     con.set_val("message", Value::Str(String::from("This is Message")));
     println!("Now liquid!");
     println!("{}", template.render(&mut con).unwrap());
+*/
+    let mut hashmap_test = HashMap::new();
+
+    hashmap_test.insert(String::from("Hello"), String::from("world"));
+
+    let mut template = LiquidTemplate::new(String::from("Hello"));
+
+    
 
     //TODO: make it can fetch config file name from command line argument.
     let sbwiki: SbWikiServer = SbWikiServer::new("config.toml");
