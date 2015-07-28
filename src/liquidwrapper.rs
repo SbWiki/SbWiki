@@ -13,22 +13,26 @@ use liquid::parse;
 
 use templatewrapper::TemplateWrapper;
 
-pub struct LiquidTemplate {
+pub struct LiquidTemplate<'a> {
     template_string: String,
-    liquid_template: Box<Renderable>,
+    liquid_template: Option<Box<Renderable>>,
+    liquid_options: LiquidOptions<'a>,
 }
 
-impl TemplateWrapper for LiquidTemplate {
-    fn new(template_string: String) -> LiquidTemplate {
+impl <'a>TemplateWrapper for LiquidTemplate<'a> {
+    fn new(template_string: String) -> LiquidTemplate<'a> {
         let mut options : LiquidOptions = Default::default();
-
-        let template : Box<Renderable> =
-            Box::new(parse(&template_string, options).unwrap());
 
         LiquidTemplate {
             template_string: template_string,
-            liquid_template: template,
+            liquid_options: options,
+            liquid_template: None,
         }
+    }
+
+    fn parse(&self) {
+        self.liquid_template = Some(Box::new(
+            liquid::parse(&self.template_string, &mut self.liquid_options).unwrap()));
     }
 
     fn render(&self, data: HashMap<String, String>) -> String {
@@ -38,7 +42,7 @@ impl TemplateWrapper for LiquidTemplate {
             con.set_val(&key, Value::Str(value));
         }
 
-        return self.liquid_template.render(&mut con).unwrap();
+        return self.liquid_template.unwrap().render(&mut con).unwrap();
     }
 }
 
