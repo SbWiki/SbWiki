@@ -1,6 +1,6 @@
 #![feature(collections)]
 #![feature(convert)]
-#![feature(core)]
+#![feature(core)] // old syntax
 
 extern crate toml;
 extern crate iron;
