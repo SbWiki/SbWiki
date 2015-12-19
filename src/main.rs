@@ -1,6 +1,6 @@
 #![feature(collections)]
 #![feature(convert)]
-#![feature(core)]
+#![feature(core)] // old syntax
 
 extern crate toml;
 extern crate iron;
@@ -10,6 +10,7 @@ extern crate liquid;
 
 use std::fs::File;
 use std::io::Read;
+use std::collections::HashMap;
 use core::convert::From as ConvertFrom;
 
 //use iron::Iron;
@@ -138,27 +139,39 @@ impl SbWikiServer {
     fn wikihandler(&self, req: &mut Request) 
                    -> IronResult<Response> {
         let ref requrl = req.url.clone();
+        let mut header = Headers::new();
         let mut urlpath = requrl.path.clone();
         
         for i in urlpath.iter() {
             println!("{}", i);
         }
 
-        Ok(Response::with((status::Ok, "Watch console.")))
+        //Liquid testing code
+        let mut replace_table: HashMap<String, String> = HashMap::new();
+        replace_table.insert(String::from("message"), String::from("Hello, liquid!"));
+        let mut con = Context::new();
+        for (key, value) in replace_table {
+            con.set_val(&key, Value::Str(value));
+        }
+        let mut template_str = String::from("hello.liquid");
+        let template = LiquidTemplate::new(template_str);
+        let page = template.render(&mut con).unwrap();
+
+        header.set(
+            ContentType(iron::mime::Mime(iron::mime::TopLevel::Text, iron::mime::SubLevel::Html, vec![]))
+        );
+        
+        let mut resp: Response = Response::with((status::Ok, page));
+        resp.headers = header;
+
+        Ok(resp)
     }
 }
 
 fn main() {
-
-    //liquid template test
-    let template: LiquidTemplate = LiquidTemplate::new(String::from("hello.liquid"));
-    let mut con = Context::new();
-    con.set_val("message", Value::Str(String::from("This is Message")));
-    println!("Now liquid!");
-    println!("{}", template.render(&mut con).unwrap());
-
     //TODO: make it can fetch config file name from command line argument.
     let sbwiki: SbWikiServer = SbWikiServer::new("config.toml");
 
     sbwiki.open(false);
 }
+
