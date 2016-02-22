@@ -1,21 +1,17 @@
-#![feature(collections)]
-#![feature(convert)]
-#![feature(core)] // old syntax
-
 extern crate toml;
 extern crate iron;
 extern crate router;
-extern crate core;
 extern crate liquid;
 
 use std::fs::File;
 use std::io::Read;
 use std::collections::HashMap;
-use core::convert::From as ConvertFrom;
+use std::convert::From;
+use std::borrow::Borrow;
 
 //use iron::Iron;
 use iron::prelude::*;
-use iron::headers::*;
+use iron::headers::{Header, HeaderFormat, Headers, Location, ContentType};
 use iron::{status, headers};
 
 //use core::str::Str;
@@ -32,7 +28,6 @@ use templatewrapper::TemplateWrapper;
 mod templatewrapper;
 mod liquidwrapper;
 
-#[derive(Clone)]
 struct SbWikiServer {
     listenaddr: String,
     wikipath: String,
@@ -49,7 +44,7 @@ impl SbWikiServer {
         //loading toml configure file
         let mut confs = String::new();
         File::open(cfgfile).unwrap().read_to_string(&mut confs);
-        let mut parser = toml::Parser::new(confs.as_str());
+        let mut parser = toml::Parser::new(confs.borrow() as &str);
         
         //add portnum to address
         let root = parser.parse().unwrap();
@@ -61,7 +56,7 @@ impl SbWikiServer {
                               host.as_str().unwrap(),
                               port.as_integer().unwrap());
 
-        listenaddr.push_str(portstr.as_str());
+        listenaddr.push_str(portstr.borrow());
         
         println!("{}", listenaddr);
 
@@ -81,31 +76,27 @@ impl SbWikiServer {
         let wpath = self.wikipath.clone();
         let listenaddr = self.listenaddr.clone();
 
-        let cloned = self.clone();
-        router.get(wpath.as_str(), 
+        router.get(wpath.borrow() as &str, 
                    move |req: &mut Request| -> IronResult<Response>
-                   {cloned.wikiredirect(req)});
+                   {SbWikiServer::wikiredirect(&self, req)});
         
-        let cloned = self.clone();
-        router.get(wikidocument.as_str(),
+        router.get(wikidocument.borrow() as &str,
                    move |req: &mut Request| -> IronResult<Response>
-                   {cloned.wikihandler(req)});
+                   {SbWikiServer::wikihandler(req)});
  
-        let cloned = self.clone();
         router.get("/",
                    move |req: &mut Request| -> IronResult<Response>
-                   {cloned.roothandler(req)});
+                   {SbWikiServer::roothandler(req)});
         
-        let cloned = self.clone();
         router.get("/:query",
                    move |req: &mut Request| -> IronResult<Response>
-                   {cloned.roothandler(req)});
+                   {SbWikiServer::roothandler(req)});
         
         Iron::new(router).http(
-            listenaddr.as_str()).unwrap();
+            listenaddr.borrow() as &str).unwrap();
     }
     
-    fn roothandler(&self, req: &mut Request)
+    fn roothandler(req: &mut Request)
                    -> IronResult<Response> {
         let ref query = req.extensions.get::<Router>()
             .unwrap().find("query").unwrap_or("/");
@@ -113,14 +104,14 @@ impl SbWikiServer {
         Ok(Response::with((status::Ok, *query)))
     }
     
-    fn wikiredirect(&self, req: &mut Request)
+    fn wikiredirect(wiki: &SbWikiServer, req: &mut Request)
                     -> IronResult<Response> {
         let mut url = req.url.path.clone();
         let mut header = Headers::new();
         let mut newpath = String::new();
 
         //TODO: customizable root page.
-        url.push(self.wikifrontpage.clone());
+        url.push(wiki.wikifrontpage.clone());
 
         for i in url.iter() {
             newpath.push_str("/");
@@ -136,7 +127,7 @@ impl SbWikiServer {
         Ok(resp)
     }
 
-    fn wikihandler(&self, req: &mut Request) 
+    fn wikihandler(req: &mut Request) 
                    -> IronResult<Response> {
         let ref requrl = req.url.clone();
         let mut header = Headers::new();
