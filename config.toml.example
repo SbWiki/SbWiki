@@ -1,3 +1,6 @@
 [server]
 port = 31337
 host = "localhost"
+
+[wiki]
+basepath = "/wiki"

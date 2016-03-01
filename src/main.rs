@@ -36,10 +36,10 @@ struct SbWikiServer {
 
 impl SbWikiServer {
     //TODO: pass config object instead of bunch of argument
-    pub fn new(cfgfile: &'static str) -> SbWikiServer {
-        let mut listenaddr    = String::new();
-        let wikipath      = String::from("/wiki");
-        let wikifrontpage = String::from("FrontPage");
+    pub fn new(cfgfile: &String) -> SbWikiServer {
+        let mut listenaddr = String::new();
+        let wikipath       = String::new();
+        let wikifrontpage  = String::from("FrontPage");
 
         //loading toml configure file
         let mut confs = String::new();
@@ -48,7 +48,6 @@ impl SbWikiServer {
         
         //add portnum to address
         let root = parser.parse().unwrap();
-        
         let port = root["server"].lookup("port").unwrap();
         let host = root["server"].lookup("host").unwrap();
 
@@ -57,6 +56,10 @@ impl SbWikiServer {
                               port.as_integer().unwrap());
 
         listenaddr.push_str(portstr.borrow());
+
+        //get base path from toml config
+        let wikipath = root["wiki"].lookup("basepath").unwrap();
+        let wikipath = format!("{}", wikipath.as_str().unwrap());
         
         println!("{}", listenaddr);
 
@@ -72,8 +75,7 @@ impl SbWikiServer {
         wikidocument.push_str("/*");
 
         let mut router = Router::new();
-        //TODO: fetch it from toml config.
-        let wpath = self.wikipath.clone();
+        let wpath      = self.wikipath.clone();
         let listenaddr = self.listenaddr.clone();
 
         router.get(wpath.borrow() as &str, 
@@ -106,8 +108,8 @@ impl SbWikiServer {
     
     fn wikiredirect(wiki: &SbWikiServer, req: &mut Request)
                     -> IronResult<Response> {
-        let mut url = req.url.path.clone();
-        let mut header = Headers::new();
+        let mut url     = req.url.path.clone();
+        let mut header  = Headers::new();
         let mut newpath = String::new();
 
         //TODO: customizable root page.
@@ -129,8 +131,8 @@ impl SbWikiServer {
 
     fn wikihandler(req: &mut Request) 
                    -> IronResult<Response> {
-        let ref requrl = req.url.clone();
-        let mut header = Headers::new();
+        let ref requrl  = req.url.clone();
+        let mut header  = Headers::new();
         let mut urlpath = requrl.path.clone();
         
         for i in urlpath.iter() {
@@ -139,7 +141,8 @@ impl SbWikiServer {
 
         //Liquid testing code
         let mut replace_table: HashMap<String, String> = HashMap::new();
-        replace_table.insert(String::from("message"), String::from("Hello, liquid!"));
+        replace_table.insert(String::from("message"),
+                             String::from("Hello, liquid!"));
         let mut con = Context::new();
         for (key, value) in replace_table {
             con.set_val(&key, Value::Str(value));
@@ -149,7 +152,12 @@ impl SbWikiServer {
         let page = template.render(&mut con).unwrap();
 
         header.set(
-            ContentType(iron::mime::Mime(iron::mime::TopLevel::Text, iron::mime::SubLevel::Html, vec![]))
+            ContentType(
+                iron::mime::Mime(
+                    iron::mime::TopLevel::Text,
+                    iron::mime::SubLevel::Html,
+                    vec![])
+            )
         );
         
         let mut resp: Response = Response::with((status::Ok, page));
@@ -160,8 +168,12 @@ impl SbWikiServer {
 }
 
 fn main() {
-    //TODO: make it can fetch config file name from command line argument.
-    let sbwiki: SbWikiServer = SbWikiServer::new("config.toml");
+    //load config file with command line arguments
+    let argv: Vec<String> = std::env::args().collect();
+    if argv.len() < 2 {
+        panic!("Usage: {} config.toml", argv[0]);
+    }
+    let sbwiki: SbWikiServer = SbWikiServer::new(&argv[1]);
 
     sbwiki.open(false);
 }
